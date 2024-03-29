@@ -15,9 +15,12 @@ import Colors from "../styles/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
+import * as Print from "expo-print";
+import { shareAsync } from "expo-sharing";
 
 export default function Notes() {
   const [images, setImages] = useState([]);
+  const [selectedPrinter, setSelectedPrinter] = useState();
   const params = useLocalSearchParams();
   const [date, setDate] = useState(new Date());
   const [note, setNote] = useState({
@@ -37,17 +40,15 @@ export default function Notes() {
     airway: "",
     ant_commissure: "",
     post_commissure: "",
+    subglottic_region: "",
     images: [],
     note: "",
     description: "",
     date: date,
   });
 
-  console.log(47, { params });
-
   useEffect(() => {
     if (params) {
-      console.log(51, params.name);
       setNote(params);
     }
   }, []);
@@ -92,6 +93,148 @@ export default function Notes() {
     } catch (error) {
       console.log(33, "error");
     }
+  };
+
+  /// HTML pdf file
+
+  const html = `
+  <html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+    <style>
+      table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+      }
+      td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body style="margin: 20px;">
+    <h1 style="font-size: 26px;text-align:center;margin-top: 50px; color: blue;">
+      ENDOSCOPIC PROCEDURE REPORT
+    </h1>
+  
+    <table>
+      <tr>
+        <td style="font-weight: bold;">Name: </td>
+        <td>${note.name}</td>
+        <td style="font-weight: bold;">Sex: </td>
+        <td>${note.sex}</td> 
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">Age: </td>
+        <td>${note.name}</td>
+        <td style="font-weight: bold;">Visit Date: </td>
+        <td>${note.visit_date}</td>
+      </tr>
+    </table>
+  
+    <div style="display: flex;border-style: groove;">
+      <div style="flex:2">
+        <h1 style="font-size: 30px;text-align:center;margin-top: 50px;color: blue;">Procedure: Fiber Optic Laryngoscopy (FOL)</h1>
+        <h2 style="font-size: 24px;text-align:center;margin-top: 10px;color: blue;">Medication: 10% Xylocaine Spray</h2>
+        <div style="border-style: groove;">
+          <h3 style="font-size: 24px;text-align:center;margin-top: 10px;color: blue;">FINDINGS</h3>
+          <table>
+            <tr>
+              <td style="font-weight: bold;">Nose: </td>
+              <td>${note.nose}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Nasopharynx: </td>
+              <td>${note.nasopharynx}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Oropharynx: </td>
+              <td>${note.oropharynx}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Pyriform Fossa: </td>
+              <td>${note.pyriform_fossa}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Post Cricoid Area: </td>
+              <td>${note.post_cricoid_area}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Epiglottis: </td>
+              <td>${note.epiglottis}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Supraglottic Region: </td>
+              <td>${note.supraglottic_region}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Glottic (Vocal Cord): </td>
+              <td>${note.glottic}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Movement of Vocal Cord: </td>
+              <td>${note.movement_of_vocal_cord}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Airway: </td>
+              <td>${note.airway}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Ant. Commissure: </td>
+              <td>${note.ant_commissure}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Post. Commissure: </td>
+              <td>${note.post_commissure}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Subglottic Region: </td>
+              <td>${note.subglottic_region}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Comments: </td>
+              <td>${note.description}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div style="flex:1">
+      <div>
+      ${note.images?.map((singleImage) => (
+        <div>
+          <img
+            src="https://cdn.pixabay.com/photo/2016/10/10/14/46/icon-1728549_640.jpg"
+            alt="Girl in a jacket"
+            width="200"
+            height="300"
+          ></img>
+        </div>
+      ))}
+      </div>
+     
+      </div>
+    </div>
+  </body>
+  </html>
+`;
+
+  const print = async () => {
+    // On iOS/android prints the given html. On web prints the HTML from the current page.
+    await Print.printAsync({
+      html: html,
+      printerUrl: selectedPrinter?.url, // iOS only
+    });
+  };
+
+  const printToFile = async () => {
+    // On iOS/android prints the given html. On web prints the HTML from the current page.
+    const { uri } = await Print.printToFileAsync({
+      html,
+    });
+    console.log("File has been saved to:", uri);
+    await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
   };
 
   return (
@@ -464,6 +607,7 @@ export default function Notes() {
               },
             ]}
             //   onPress={() => storeNameArray(note)}
+            onPress={print}
           >
             <Text style={{ color: "#ffffff", fontWeight: "bold" }}>PDF</Text>
           </TouchableOpacity>

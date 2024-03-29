@@ -28,7 +28,6 @@ export default function index() {
         try {
           const jsonValue = await AsyncStorage.getItem("node");
           let userValue = jsonValue != null ? JSON.parse(jsonValue) : [];
-          console.log(49, userValue);
           setData(userValue);
           setLoading(false);
         } catch (err) {
@@ -68,7 +67,7 @@ export default function index() {
           <SearchBar data={data} onChange={setData} />
 
           {data ? (
-            data.map((item) => <RenderNote item={item} />)
+            data.map((item, index) => <RenderNote key={index} item={item} />)
           ) : (
             <Text style={{ textAlign: "center" }}>No Data!</Text>
           )}
@@ -84,6 +83,9 @@ export default function index() {
             }}
           /> */}
         </ScrollView>
+        <TouchableOpacity onPress={()=> router.push("pdf")}>
+          <Text style={{fontSize:20}}>PDF</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.newNoteButton}
           onPress={() => router.push("notes")}
